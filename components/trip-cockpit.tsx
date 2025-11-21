@@ -15,21 +15,33 @@ export function TripCockpit() {
   useEffect(() => {
     if (!currentTrip?.id) return
 
-    // Load activities from Supabase
-    getTripActivities(currentTrip.id)
-      .then((activities) => {
-        setActivities(activities)
-      })
-      .catch((error) => {
-        console.error('Error loading activities:', error)
-        // In development, continue with empty activities
-      })
+    // Check if trip ID is a valid UUID (Supabase format)
+    // If it's a temporary ID (like "trip-123456"), skip Supabase operations
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentTrip.id)
+    
+    if (isValidUUID) {
+      // Load activities from Supabase only if trip ID is a valid UUID
+      getTripActivities(currentTrip.id)
+        .then((activities) => {
+          setActivities(activities || [])
+        })
+        .catch((error) => {
+          // Only log if it's a real error (not just missing trip)
+          if (error?.code !== 'PGRST116') {
+            console.error('Error loading activities:', error)
+          }
+          // In development, continue with empty activities
+        })
 
-    // Subscribe to real-time updates
-    const unsubscribe = subscribeToTrip(currentTrip.id)
+      // Subscribe to real-time updates
+      const unsubscribe = subscribeToTrip(currentTrip.id)
 
-    return () => {
-      unsubscribe()
+      return () => {
+        unsubscribe()
+      }
+    } else {
+      // For temporary trips, just use empty activities
+      setActivities([])
     }
   }, [currentTrip?.id, setActivities])
 
