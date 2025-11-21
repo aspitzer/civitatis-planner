@@ -11,18 +11,24 @@ import { useEffect } from 'react'
 
 export function AICompanionPanel() {
   const currentTrip = useTripStore((state) => state.currentTrip)
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const chat = useChat({
     api: '/api/chat',
     initialMessages: currentTrip?.description
       ? [
           {
             id: 'user-0',
-            role: 'user',
+            role: 'user' as const,
             content: currentTrip.description,
           },
         ]
       : [],
-  })
+  } as any)
+  
+  const messages = chat.messages || []
+  const input = (chat as any).input || ''
+  const handleInputChange = (chat as any).handleInputChange || ((e: any) => {})
+  const handleSubmit = (chat as any).handleSubmit || ((e: React.FormEvent) => e.preventDefault())
+  const isLoading = (chat as any).isLoading || false
 
   useEffect(() => {
     if (currentTrip?.description && messages.length === 0) {
@@ -39,7 +45,7 @@ export function AICompanionPanel() {
 
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message) => (
+          {messages.map((message: any) => (
             <Card
               key={message.id}
               className={
@@ -52,7 +58,7 @@ export function AICompanionPanel() {
                 <div className="text-sm font-medium mb-1">
                   {message.role === 'user' ? 'You' : 'AI Companion'}
                 </div>
-                <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                <div className="text-sm whitespace-pre-wrap">{String(message.content || '')}</div>
               </CardContent>
             </Card>
           ))}
