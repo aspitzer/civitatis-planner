@@ -1,6 +1,5 @@
 import { openai } from '@ai-sdk/openai'
-import { streamText, tool } from 'ai'
-import { z } from 'zod'
+import { streamText } from 'ai'
 
 export const runtime = 'edge'
 
@@ -22,7 +21,7 @@ When a user describes their trip, you should:
 1. Acknowledge their trip details (destination, dates, group, preferences)
 2. Propose a logical day structure
 3. Suggest initial activities for Day 1
-4. Use the available tools to add activities to their trip
+4. Provide specific recommendations with details (title, description, duration, price range, best time of day)
 
 Always be mindful of:
 - Budget constraints mentioned
@@ -31,46 +30,7 @@ Always be mindful of:
 - Interests (history, food, art, etc.)
 - Not overloading any single day`,
     messages,
-    tools: {
-      addActivity: tool({
-        description: 'Add an activity to the trip itinerary',
-        parameters: z.object({
-          title: z.string().describe('Activity title'),
-          description: z.string().optional().describe('Activity description'),
-          destination: z.string().optional().describe('Destination city'),
-          dayNumber: z.number().describe('Day number (1-based)'),
-          timeBlock: z.enum(['morning', 'afternoon', 'evening']).describe('Time block for the activity'),
-          durationMinutes: z.number().optional().describe('Duration in minutes'),
-          price: z.number().optional().describe('Price in euros'),
-          rating: z.number().optional().describe('Rating (0-5)'),
-          tags: z.array(z.string()).optional().describe('Tags like "Must-see", "Food", "History", etc.'),
-        }),
-        execute: async ({ title, description, destination, dayNumber, timeBlock, durationMinutes, price, rating, tags }) => {
-          // In a real implementation, this would save to Supabase
-          // For now, return success
-          return {
-            success: true,
-            message: `Added "${title}" to Day ${dayNumber} ${timeBlock}`,
-          }
-        },
-      }),
-      suggestItinerary: tool({
-        description: 'Suggest a complete itinerary structure for the trip',
-        parameters: z.object({
-          numDays: z.number().describe('Number of days'),
-          destinations: z.array(z.string()).describe('List of destinations'),
-          preferences: z.string().optional().describe('User preferences and interests'),
-        }),
-        execute: async ({ numDays, destinations, preferences }) => {
-          return {
-            success: true,
-            message: `Created a ${numDays}-day itinerary for ${destinations.join(', ')}`,
-            structure: `Day structure created with ${numDays} days`,
-          }
-        },
-      }),
-    },
   })
 
-  return result.toDataStreamResponse()
+  return result.toTextStreamResponse()
 }
